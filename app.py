@@ -8,7 +8,7 @@ import aiohttp
 import traceback
 import json
 import webbrowser
-
+import importlib
 
 CLIENTS = set()
 
@@ -19,13 +19,15 @@ port = 60000
 async def broadcast(data):
     
     for ws in CLIENTS:
-        await ws.send_str(data)
+        try:
+            await ws.send_str(data)
+
+        except:
+            CLIENTS.remove(ws)
 
 async def websocket_handler(request):
 
     # our websocket can handle state
-    
-
     ws = WebSocketResponse() 
     await ws.prepare(request)
     print(f"{request.headers['Host']} connected")
@@ -37,9 +39,23 @@ async def websocket_handler(request):
     async for msg in ws:
 
         if msg.type == aiohttp.WSMsgType.TEXT:
-
             data = msg.data
-            print(data)          
+            try:
+                args = json.loads(data)
+            except:
+                args = {}
+            if "cmd" in args:
+                importlib.invalidate_caches()
+                try:
+                    mod = importlib.import_module(f'commands.{args["cmd"]}')
+                    mod = importlib.reload(mod)
+                    main = getattr(mod, 'main')
+                    stuff = await main("fake state")
+                    await broadcast(stuff)
+
+                except:
+                    traceback.print_exc()
+
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('ws connection closed with exception %s' % ws.exception())            
 

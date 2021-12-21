@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import aioconsole
+import json
 
 async def listener(ws):
 
@@ -13,11 +14,12 @@ async def listener(ws):
 async def console(ws):
 
     while True:
-
+        # make some kind of ready flag
         data = await aioconsole.ainput()
 
         if data:
-            await ws.send_str(data)
+            payload = json.dumps({"cmd": data})
+            await ws.send_str(payload)
 
 async def main():
 

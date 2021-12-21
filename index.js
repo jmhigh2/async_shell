@@ -7,6 +7,10 @@ while (!initialized) {
     try 
     {
         var ws = new WebSocket(url);
+        ws.onmessage = function(evt) {
+            console.log(evt.data)
+
+        } 
         initialized = true;
         console.log(ws)
 
